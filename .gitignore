@@ -1,0 +1,5 @@
+node_modules/
+fixtures/
+gen-fixture.mjs
+verify-png.ps1
+*.log
