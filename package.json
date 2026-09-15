@@ -1,24 +1,25 @@
 {
   "name": "@asynx6/tokenzip",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publishConfig": { "access": "public" },
-  "description": "Vision models pay for tiles, not megapixels. Compute the exact size each provider sees and re-encode PNGs to it — zero quality loss, ~80% fewer bytes.",
+  "description": "Vision models pay for tiles, not megapixels. Per-provider token math, exact + budget resize, zero-dep PNG/JPEG codecs, Claude Code hook, MCP server.",
   "type": "module",
   "bin": { "tokenzip": "tokenzip.js" },
   "main": "lib/tokens.js",
   "exports": {
     ".": "./lib/tokens.js",
     "./optimize": "./lib/optimize.js",
-    "./png": "./lib/png.js"
+    "./png": "./lib/png.js",
+    "./jpeg": "./lib/jpeg.js"
   },
   "engines": { "node": ">=18" },
   "scripts": {
-    "test": "node test-tokens.js && node test-png.js && node test-jpeg.js",
+    "test": "node test-tokens.js && node test-png.js && node test-jpeg.js && node test-integration.js",
     "test:jpeg:cross": "node test-jpeg.js && powershell -NoProfile -ExecutionPolicy Bypass -File verify-jpeg.ps1",
     "bench": "node bench.mjs"
   },
-  "files": ["lib/", "tokenzip.js", "README.md", "LICENSE"],
-  "keywords": ["llm", "vision", "tokens", "claude", "gpt-4o", "gemini", "image", "png", "cost-optimization", "zero-dependency"],
+  "files": ["lib/", "hooks/", "mcp/", "tokenzip.js", "README.md", "LICENSE", "CHANGELOG.md", "FORMULAS.md", "CONTRIBUTING.md", "demo.png"],
+  "keywords": ["llm", "vision", "tokens", "claude", "gpt-4o", "gemini", "mcp", "claude-code", "hooks", "image", "png", "jpeg", "cost-optimization", "zero-dependency"],
   "license": "MIT",
   "repository": { "type": "git", "url": "git+https://github.com/asynx6/tokenzip.git" }
 }

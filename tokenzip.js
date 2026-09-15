@@ -23,8 +23,21 @@ const flagVal = (name, def) => {
 };
 const has = (name) => argv.includes(name);
 
+// subcommands that bypass analysis entirely.
+// Set exitCode (not process.exit) so async stdio loops keep running.
+if (argv[0] === 'mcp') {
+  await import('./mcp/server.mjs');
+  process.exitCode = 0;
+} else if (argv[0] === 'hook') {
+  // tokenzip hook claude-code — read stdin, write hook JSON
+  await import(`./hooks/${argv[1] || 'claude-code'}.mjs`);
+  process.exitCode = 0;
+} else {
+main();
+}
+
 function usage() {
-  console.log(`tokenzip v${process.env.npm_package_version || '0.2.0'} — pay vision tokens, not megapixels
+  console.log(`tokenzip v${process.env.npm_package_version || '0.3.0'} — pay vision tokens, not megapixels
 
 usage:
   tokenzip <file.png|dir> [--provider anthropic|openai|gemini|all]
@@ -63,6 +76,7 @@ function pngSizeFrom(buf) {
   throw new Error('cannot read image dimensions');
 }
 
+function main() {
 const rows = [];
 // values consumed by flags must not be treated as file targets
 const VALUE_FLAGS = ['--provider', '--max-tokens', '--out'];
@@ -70,13 +84,13 @@ const consumed = new Set();
 argv.forEach((a, i) => {
   if (VALUE_FLAGS.includes(a)) consumed.add(i + 1);
 });
-let targets = argv.filter((a, i) => !a.startsWith('--') && !consumed.has(i) && a !== 'tokenzip');
+let targets = argv.filter((a, i) => !a.startsWith('--') && !consumed.has(i) && a !== 'tokenzip' && !['mcp', 'hook'].includes(a));
 const dir = has('--dir');
 const providerArg = flagVal('--provider', 'all');
 
 if (!targets.length && !dir) {
   if (has('--version') || has('-v')) {
-    console.log('0.2.0');
+    console.log('0.3.0');
     process.exit(0);
   }
   usage();
@@ -149,4 +163,5 @@ for (const file of targets) {
 if (rows.length > 1) {
   const avgRatio = rows.reduce((a, r) => a + r.pixelRatio, 0) / rows.length;
   console.log(`\nsummary: ${rows.length} image/provider rows · avg upload ${Math.max(0, Math.round((1 - avgRatio) * 100))}% smaller`);
+}
 }

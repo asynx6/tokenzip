@@ -1,9 +1,6 @@
 # tokenzip
 
-[![CI](https://github.com/asynx6/tokenzip/actions/workflows/ci.yml/badge.svg)](https://github.com/asynx6/tokenzip/actions/workflows/ci.yml)
-[![node](https://img.shields.io/badge/node-%E2%89%A518-brightgreen)](https://nodejs.org)
-[![license: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-[![zero dependencies](https://img.shields.io/badge/dependencies-0-blue)](package.json)
+![bytes per image](demo.png)
 
 Vision models count image tokens by *tiles*, not megapixels. A 3000×2000
 screenshot costs Claude exactly the same 1568 tokens whether you upload 6
@@ -24,14 +21,47 @@ screenshot.png — 3000×2000 (Claude (Anthropic))
 ## Install / run
 
 ```bash
-# from GitHub directly, no install:
-git clone https://github.com/asynx6/tokenzip && cd tokenzip
-node tokenzip.js ./shot.png --provider all
-
-# npm (scoped, published with provenance):
-npm install @asynx6/tokenzip
-npx @asynx6/tokenzip ./shot.png
+npm install @asynx6/tokenzip          # CLI: npx tokenzip, lib: require('@asynx6/tokenzip')
+npm install -g @asynx6/tokenzip       # global `tokenzip` command
+# or no install at all (zero deps): clone + `node tokenzip.js ...`
 ```
+
+## Hook it into your AI tools
+
+**Claude Code — never burn 1568 tokens on a bloated Read again.** The hook
+intercepts image Reads, rewrites oversized files into a tokenzip cache, and
+Claude sees the resized copy:
+
+```bash
+claude --settings '{"hooks":{"PreToolUse":[{"matcher":"Read","hooks":[{"type":"command","command":"npx -y @asynx6/tokenzip hook claude-code"}]}]}}'
+```
+
+Or add the same block permanently to `.claude/settings.json`. PNG and
+baseline JPEG inputs only; anything weird passes through untouched.
+
+**Claude Desktop / OpenCode / Cursor / anything that speaks MCP:**
+
+```json
+{ "mcpServers": { "tokenzip": { "command": "npx", "args": ["-y", "@asynx6/tokenzip", "mcp"] } } }
+```
+
+OpenCode uses the same JSON under `mcp` in its config (`type: "local"`).
+Tools exposed: `tokenzip_estimate`, `tokenzip_optimize` (writes a file and
+tells you exact token/byte deltas), `tokenzip_batch_dir`.
+
+**As a library:**
+
+```js
+import { PROVIDERS, anthropicTokens } from '@asynx6/tokenzip';
+import { optimize } from '@asynx6/tokenzip/optimize';
+
+anthropicTokens(3000, 2000);              // 1568 — what one shot costs
+const plan = optimize('anthropic', 3000, 2000);
+// plan.best = { w: 1328, h: 885, tokens: 1568 }  — resize to this, bill unchanged
+```
+
+CLI, hook, MCP, and library share the same tested formulas — no drift
+between "what the tool says" and "what your code does".
 
 ## What it does
 
@@ -48,23 +78,6 @@ npx @asynx6/tokenzip ./shot.png
   zero-dep encoder, 8-bit) and JPEG (baseline DCT encode; decode accepts
   baseline JPEG input) — no external binaries.
 - **Folder mode** (`--dir ./shots`): per-image analysis across a directory.
-
-## As a library
-
-The token math is importable if you want it inside your agent's request
-pipeline instead of a CLI pass:
-
-```js
-import { PROVIDERS, anthropicTokens } from '@asynx6/tokenzip';
-import { optimize } from '@asynx6/tokenzip/optimize';
-
-anthropicTokens(3000, 2000);              // 1568 — what one shot costs
-const plan = optimize('anthropic', 3000, 2000);
-// plan.best = { w: 1328, h: 885, tokens: 1568 }  — resize to this, bill unchanged
-```
-
-CLI and library share the same tested formulas — no drift between "what the
-tool says" and "what your code does."
 
 ## Why this saves anything
 
@@ -84,8 +97,6 @@ tokens saved on a single image. What you actually save:
    exact per-provider breakpoints.
 
 ## Benchmarks
-
-![bytes per image](demo.png)
 
 `node bench.mjs` regenerates this table in-memory (reproducible, no
 network, no fixtures):
