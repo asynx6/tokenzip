@@ -4,8 +4,10 @@
 // verify-jpeg.ps1 generates + validates the cross files; run it after this
 // suite on Windows, or `npm run test:jpeg:cross`.
 import { encodeJpeg, decodeJpeg } from './lib/jpeg.js';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
+
+mkdirSync('fixtures', { recursive: true });
 
 let pass = 0, fail = 0;
 const ok = (cond, name) => {
