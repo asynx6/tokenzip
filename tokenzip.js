@@ -37,7 +37,7 @@ main();
 }
 
 function usage() {
-  console.log(`tokenzip v${process.env.npm_package_version || '0.3.0'} — pay vision tokens, not megapixels
+  console.log(`tokenzip v${process.env.npm_package_version || '0.3.1'} — pay vision tokens, not megapixels
 
 usage:
   tokenzip <file.png|dir> [--provider anthropic|openai|gemini|all]
@@ -90,7 +90,7 @@ const providerArg = flagVal('--provider', 'all');
 
 if (!targets.length && !dir) {
   if (has('--version') || has('-v')) {
-    console.log('0.3.0');
+    console.log('0.3.1');
     process.exit(0);
   }
   usage();

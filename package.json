@@ -1,6 +1,6 @@
 {
   "name": "@asynx6/tokenzip",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publishConfig": { "access": "public" },
   "description": "Vision models pay for tiles, not megapixels. Per-provider token math, exact + budget resize, zero-dep PNG/JPEG codecs, Claude Code hook, MCP server.",
   "type": "module",

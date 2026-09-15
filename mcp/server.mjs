@@ -146,7 +146,7 @@ function handle(req) {
     send({ id, result: {
       protocolVersion: params?.protocolVersion || '2025-03-26',
       capabilities: { tools: {} },
-      serverInfo: { name: 'tokenzip', version: '0.3.0' },
+      serverInfo: { name: 'tokenzip', version: '0.3.1' },
     } });
   } else if (method === 'notifications/initialized' || method === 'initialized') {
     // notification, no reply
