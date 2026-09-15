@@ -12,4 +12,5 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: node --check tokenzip.js
-      - run: node test-tokens.js && node test-png.js
+      - run: node test-tokens.js && node test-png.js && node test-jpeg.js
+      - run: node bench.mjs > /dev/null && node gen-demo.mjs && node tokenzip.js --version

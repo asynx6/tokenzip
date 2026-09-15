@@ -1,10 +1,15 @@
 # tokenzip
 
+[![CI](https://github.com/asynx6/tokenzip/actions/workflows/ci.yml/badge.svg)](https://github.com/asynx6/tokenzip/actions/workflows/ci.yml)
+[![node](https://img.shields.io/badge/node-%E2%89%A518-brightgreen)](https://nodejs.org)
+[![license: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![zero dependencies](https://img.shields.io/badge/dependencies-0-blue)](package.json)
+
 Vision models count image tokens by *tiles*, not megapixels. A 3000×2000
 screenshot costs Claude exactly the same 1568 tokens whether you upload 6
 megapixels or the 1328×885 it internally resizes to. tokenzip computes that
-exact size per provider and re-encodes the PNG: same tokens, same detail
-the model ever sees, ~80% fewer bytes uploaded.
+exact size per provider and re-encodes the image: same tokens, same detail
+the model ever sees, far fewer bytes uploaded.
 
 ```
 $ tokenzip screenshot.png --provider anthropic
@@ -16,19 +21,50 @@ screenshot.png — 3000×2000 (Claude (Anthropic))
   note          : send 1328×885: identical tokens & detail, 80% fewer bytes
 ```
 
+## Install / run
+
+```bash
+# from GitHub directly, no install:
+git clone https://github.com/asynx6/tokenzip && cd tokenzip
+node tokenzip.js ./shot.png --provider all
+
+# npm (scoped, published with provenance):
+npm install @asynx6/tokenzip
+npx @asynx6/tokenzip ./shot.png
+```
+
 ## What it does
 
 - **Per-provider token math** for Claude, GPT-4o+, and Gemini — the resize +
   tile formulas from each provider's own docs, pinned with tests (512²→255
-  tokens, 768²→787, 2×768→258, etc.).
+  tokens, 768²→787, 2×768→258, etc.). Formula sources and dates are recorded
+  in [FORMULAS.md](FORMULAS.md).
 - **Exact mode**: shrink to the size the provider's own pipeline ends up at.
   Token bill unchanged, upload bytes slashed (matters for latency, egress
   fees, mobile, batch agents that resend images every turn).
 - **Budget mode** (`--max-tokens 300`): binary-searches the largest resize
   that fits your cap, and tells you how many tokens it saves per image.
-- **Re-encode** (`--out`): writes the optimized PNG with a built-in zero-dep
-  encoder (8-bit, non-interlaced; RGB/RGBA/palette input).
+- **Re-encode** (`--out`): writes the optimized image. PNG (built-in
+  zero-dep encoder, 8-bit) and JPEG (baseline DCT encode; decode accepts
+  baseline JPEG input) — no external binaries.
 - **Folder mode** (`--dir ./shots`): per-image analysis across a directory.
+
+## As a library
+
+The token math is importable if you want it inside your agent's request
+pipeline instead of a CLI pass:
+
+```js
+import { PROVIDERS, anthropicTokens } from '@asynx6/tokenzip';
+import { optimize } from '@asynx6/tokenzip/optimize';
+
+anthropicTokens(3000, 2000);              // 1568 — what one shot costs
+const plan = optimize('anthropic', 3000, 2000);
+// plan.best = { w: 1328, h: 885, tokens: 1568 }  — resize to this, bill unchanged
+```
+
+CLI and library share the same tested formulas — no drift between "what the
+tool says" and "what your code does."
 
 ## Why this saves anything
 
@@ -47,25 +83,32 @@ tokens saved on a single image. What you actually save:
    making screenshots small *is* the optimization, and `tokenzip` shows the
    exact per-provider breakpoints.
 
-## Install / run
+## Benchmarks
 
-```bash
-npm install -g github:asynx6/tokenzip   # installs the `tokenzip` command
-# or just: clone, then `node tokenzip.js ...` (no install step, no deps)
-node tokenzip.js ./shot.png --max-tokens 500 --out ./shot-z.png
-```
+![bytes per image](demo.png)
 
-Zero dependencies. Node ≥ 18. Single-file CLI, auditable libraries:
-`lib/tokens.js` (formulas + sources), `lib/optimize.js` (search),
-`lib/png.js` (PNG codec).
+`node bench.mjs` regenerates this table in-memory (reproducible, no
+network, no fixtures):
+
+| input (JPEG q85) | size | Anthropic tok | exact→ bytes | budget 300 tok→ |
+|---|---|---|---|---|
+| screenshot-like | 3000×2000 | 1568 | 1328×885 · 436 KB → 181 KB (−58%) | 512×341 · 34 KB (−805 tok) |
+| chat UI | 1280×800 | 1366 | already optimal · 19 KB → 19 KB | 512×320 (−1105 tok) |
+| phone shot | 1080×2400 | 1568 | 727×1616 · 306 KB → 243 KB (−21%) | 230×512 (−1190 tok) |
+
+The chat-UI row is the honest counter-example: an image already near the
+provider floor gains nothing — and tokenzip tells you that instead of
+shrinking something pointlessly.
 
 ## Limitations (read before trusting)
 
-- v0.1 reads JPEG dimensions but cannot re-encode JPEGs (needs a codec —
-  open issue, PRs welcome). PNGs only for `--out`.
-- 8-bit, non-interlaced PNGs only.
-- Token formulas match provider docs as of 2026-09. They have changed
-  before; pin this file if you build on the math (`tokensAt()` is exported).
+- JPEG: baseline encode/decode (4:4:4 + 4:2:0, quality knob). Progressive
+  and lossless JPEG inputs throw a clear error instead of guessing. WebP
+  has no codec in v0.x — convert or help us build it.
+- 8-bit PNGs, non-interlaced.
+- Token formulas match provider docs as of 2026-09; they have changed
+  before. [FORMULAS.md](FORMULAS.md) pins sources, dates, and the update
+  procedure; `test-tokens.js` fails loudly when docs and code diverge.
 - Cost figures are order-of-magnitude list-price estimates. Your rate plan
   differs.
 - Budget mode optimizes pixels-per-token, not task quality. Only you know
@@ -76,7 +119,14 @@ Zero dependencies. Node ≥ 18. Single-file CLI, auditable libraries:
 ```bash
 node test-tokens.js   # 12 provider-math cases against documented examples
 node test-png.js      # codec roundtrips, palette, resize, optimize invariants
+node test-jpeg.js     # JPEG encode→decode roundtrip vs own decoder + System.Drawing check
+node bench.mjs        # regenerates the README benchmark table
 ```
+
+## Contributing
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md) — it explains the codec
+architecture in one page.
 
 ## License
 

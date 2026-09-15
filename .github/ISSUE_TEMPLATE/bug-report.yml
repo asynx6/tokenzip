@@ -1,0 +1,23 @@
+name: Bug report
+description: Wrong numbers, crash, or bad output
+labels: bug
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: command run, input file type/size, expected vs actual. For wrong token numbers, link the provider doc you compared against.
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, `node -v`, tokenzip version (`node tokenzip.js --version`)
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: smallest command + sample image that shows it (generate one with gen-fixture.mjs if you can)

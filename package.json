@@ -1,6 +1,7 @@
 {
-  "name": "tokenzip",
-  "version": "0.1.0",
+  "name": "@asynx6/tokenzip",
+  "version": "0.2.0",
+  "publishConfig": { "access": "public" },
   "description": "Vision models pay for tiles, not megapixels. Compute the exact size each provider sees and re-encode PNGs to it — zero quality loss, ~80% fewer bytes.",
   "type": "module",
   "bin": { "tokenzip": "tokenzip.js" },
@@ -11,7 +12,11 @@
     "./png": "./lib/png.js"
   },
   "engines": { "node": ">=18" },
-  "scripts": { "test": "node test-tokens.js && node test-png.js" },
+  "scripts": {
+    "test": "node test-tokens.js && node test-png.js && node test-jpeg.js",
+    "test:jpeg:cross": "node test-jpeg.js && powershell -NoProfile -ExecutionPolicy Bypass -File verify-jpeg.ps1",
+    "bench": "node bench.mjs"
+  },
   "files": ["lib/", "tokenzip.js", "README.md", "LICENSE"],
   "keywords": ["llm", "vision", "tokens", "claude", "gpt-4o", "gemini", "image", "png", "cost-optimization", "zero-dependency"],
   "license": "MIT",

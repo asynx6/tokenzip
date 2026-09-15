@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { readPng, writePng, resizeNearest, paletteToRgba } from './lib/png.js';
+import { encodeJpeg, decodeJpeg } from './lib/jpeg.js';
 import { optimize } from './lib/optimize.js';
 import { PROVIDERS, COST_PER_MTOK } from './lib/tokens.js';
 
@@ -23,7 +24,7 @@ const flagVal = (name, def) => {
 const has = (name) => argv.includes(name);
 
 function usage() {
-  console.log(`tokenzip — pay vision tokens, not megapixels
+  console.log(`tokenzip v${process.env.npm_package_version || '0.2.0'} — pay vision tokens, not megapixels
 
 usage:
   tokenzip <file.png|dir> [--provider anthropic|openai|gemini|all]
@@ -38,11 +39,8 @@ within the model's own downscale.`);
 function imageOf(buf, file) {
   const ext = extname(file).toLowerCase();
   if (ext === '.png') return paletteToRgba(readPng(buf));
-  throw new Error(
-    ext === '.jpg' || ext === '.jpeg'
-      ? `JPEG decode needs a codec; for v0.1 use the JPEG header size instead (see below), or convert: magick in.jpg in.png`
-      : `unsupported format ${ext} (v0.1: PNG; JPEG sizes reported without resize)`,
-  );
+  if (ext === '.jpg' || ext === '.jpeg') return decodeJpeg(buf);
+  throw new Error(`unsupported format ${ext} (v0.2: PNG + baseline JPEG)`);
 }
 
 function pngSizeFrom(buf) {
@@ -77,6 +75,10 @@ const dir = has('--dir');
 const providerArg = flagVal('--provider', 'all');
 
 if (!targets.length && !dir) {
+  if (has('--version') || has('-v')) {
+    console.log('0.2.0');
+    process.exit(0);
+  }
   usage();
   process.exit(0);
 }
@@ -134,8 +136,11 @@ for (const file of targets) {
 
     if (outArg && img && r.best.w * r.best.h < img.width * img.height) {
       const resized = resizeNearest(img, r.best.w, r.best.h);
-      writeFileSync(outArg, writePng(resized));
-      console.log(`  wrote         : ${outArg} (${statSync(outArg).size} bytes)`);
+      const outBuf = /\.jpe?g$/i.test(outArg)
+        ? encodeJpeg(resized, { quality: 85 })
+        : writePng(resized);
+      writeFileSync(outArg, outBuf);
+      console.log(`  wrote         : ${outArg} (${outBuf.length} bytes)`);
       break; // one out file per run; provider loop done for this file
     }
   }
