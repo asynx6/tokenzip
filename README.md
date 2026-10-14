@@ -21,10 +21,14 @@ screenshot.png — 3000×2000 (Claude (Anthropic))
 ## Install / run
 
 ```bash
-npm install @asynx6/tokenzip          # CLI: npx tokenzip, lib: require('@asynx6/tokenzip')
+npm install @asynx6/tokenzip          # CLI: npx @asynx6/tokenzip, lib: require('@asynx6/tokenzip')
 npm install -g @asynx6/tokenzip       # global `tokenzip` command
 # or no install at all (zero deps): clone + `node tokenzip.js ...`
 ```
+
+> **Note:** use the scoped name `@asynx6/tokenzip`. The bare name `tokenzip` on
+> npm belongs to a different publisher — `npx tokenzip` downloads *their*
+> placeholder package, not this one.
 
 ## Hook it into your AI tools
 
