@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.3.2 — 2026-10-14
+
+- README fix: install/run sekarang menyuruh `npx @asynx6/tokenzip`, bukan
+  `npx tokenzip`. Nama tanpa scope `tokenzip` di npm dikuasai publisher lain,
+  jadi perintah lama mengunduh paket pihak ketiga, bukan paket ini.
+  (Ditemukan lewat QA independen; commit README sebelumnya tidak sampai ke
+  pengguna karena perubahan hanya di repo, bukan di paket terbit.)
+- Tidak ada perubahan kode. Rilis ini murni untuk memperbaiki dokumentasi yang
+  dibaca calon pengguna.
+
 ## v0.3.0 — 2026-09-15
 
 - `tokenzip mcp` — MCP server (stdio JSON-RPC): `tokenzip_estimate`,
